@@ -112,6 +112,32 @@
     let previousZ = 0;
 
     let carbonatedPower = 0;
+
+        // =========================
+        // シェイク判定用
+        // =========================
+
+        // シェイク1回として認識する強さ
+        const SHAKE_THRESHOLD = 3.0;
+
+        // 反対方向への変化を検出するための閾値
+        const DIRECTION_THRESHOLD = 2.0;
+
+        // 1回のシェイクとして認識した後の待ち時間
+        const SHAKE_COOLDOWN = 300;
+
+        // 最後に強く動いた方向
+        let lastDirection = 0;
+
+        // 現在シェイク中か
+        let isShaking = false;
+
+        // 最後にシェイクを認識した時間
+        let lastShakeTime = 0;
+
+        // シェイク回数
+        let shakeCount = 0;
+
         async function startSensor()
         {
             const status =
