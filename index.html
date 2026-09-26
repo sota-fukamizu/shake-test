@@ -1,347 +1,582 @@
 <!DOCTYPE html>
 <html lang="ja">
-
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Unity Motion Controller</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 
-    <meta charset="UTF-8">
-
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0">
-
-    <title>炭酸シェイク</title>
-
-    <style>
-
-        body {
-            margin: 0;
-            background: #111;
-            color: white;
-            font-family: sans-serif;
-            text-align: center;
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'shake-pulse': 'pulseGlow 0.4s ease-out',
+          },
+          keyframes: {
+            pulseGlow: {
+              '0%': { transform: 'scale(0.98)', boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+              '70%': { transform: 'scale(1.02)', boxShadow: '0 0 25px 12px rgba(239, 68, 68, 0)' },
+              '100%': { transform: 'scale(1)' },
+            }
+          }
         }
+      }
+    }
+  </script>
 
-        h1 {
-            margin-top: 60px;
-            font-size: 40px;
-        }
+  <style>
+    body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .meter-bar {
+      transition: width 0.05s linear;
+    }
 
-        button {
-            width: 80%;
-            height: 150px;
+      /* =========================
+   炭酸ボトル
+   ========================= */
 
-            margin-top: 40px;
+      .bottle {
+          position: relative;
+          width: 100px;
+          height: 220px;
+          margin: 20px auto;
+          border-radius: 25px 25px 30px 30px;
+          background: linear-gradient( 90deg, #2563eb, #60a5fa, #2563eb );
+          border: 3px solid #93c5fd;
+          transform-origin: bottom center;
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), inset 5px 0 10px rgba(255,255,255,0.2);
+      }
 
-            font-size: 35px;
-        }
 
-        .value {
-            font-size: 35px;
-            margin-top: 30px;
-        }
+      /* キャップ */
 
-        #status {
-            margin-top: 30px;
-            font-size: 22px;
-        }
+      .cap {
+          position: absolute;
+          width: 50px;
+          height: 25px;
+          left: 25px;
+          top: -25px;
+          border-radius: 8px 8px 2px 2px;
+          background: #dbeafe;
+      }
 
-        #gauge {
-            width: 80%;
-            height: 40px;
-            margin: 40px auto 20px;
 
-            background: #333;
-        }
+      /* 中身 */
 
-        #gaugeFill {
-            width: 0%;
-            height: 100%;
-            background: #00aaff;
+      .drink {
+          position: absolute;
+          left: 10px;
+          right: 10px;
+          bottom: 10px;
+          top: 40px;
+          border-radius: 15px 15px 20px 20px;
+          overflow: hidden;
+          background: rgba(255,255,255,0.15);
+      }
 
-            transition: width 0.1s;
-        }
 
-        #power {
-            font-size: 30px;
-        }
-    </style>
+      /* 泡 */
 
+      .bubble {
+          position: absolute;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.8);
+          bottom: -10px;
+          animation: bubbleUp 2s infinite linear;
+      }
+
+
+      /* 泡の位置・タイミング */
+
+      .b1 {
+          left: 20%;
+          animation-delay: 0s;
+      }
+
+      .b2 {
+          left: 40%;
+          animation-delay: .3s;
+      }
+
+      .b3 {
+          left: 60%;
+          animation-delay: .7s;
+      }
+
+      .b4 {
+          left: 75%;
+          animation-delay: 1.1s;
+      }
+
+      .b5 {
+          left: 30%;
+          animation-delay: 1.5s;
+      }
+
+      .b6 {
+          left: 50%;
+          animation-delay: .5s;
+      }
+
+      .b7 {
+          left: 80%;
+          animation-delay: 1.7s;
+      }
+
+      .b8 {
+          left: 15%;
+          animation-delay: .9s;
+      }
+
+
+      /* 泡が上に上がる */
+
+      @keyframes bubbleUp {
+
+          0% {
+              transform: translateY(0) scale(.5);
+              opacity: 0;
+          }
+
+          20% {
+              opacity: 1;
+          }
+
+          100% {
+              transform: translateY(-180px) scale(1);
+              opacity: 0;
+          }
+      }
+
+  </style>
 </head>
 
-
-<body>
-
-    <h1>🥤 炭酸シェイク</h1>
-
-    <button onclick="startSensor()">
-        センサー開始
-    </button>
-
-
-    <div id="status">
-        センサー未開始
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans select-none antialiased">
+  
+  <header class="bg-slate-900/90 border-b border-slate-800 px-4 py-3 sticky top-0 backdrop-blur z-20 flex justify-between items-center">
+    <div class="flex items-center space-x-2">
+      <div class="h-3 w-3 rounded-full bg-emerald-500 animate-ping absolute opacity-75" id="pingDot"></div>
+      <div class="h-3 w-3 rounded-full bg-slate-500 relative" id="statusDot"></div>
+      <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" id="statusText">接続待機中</span>
     </div>
-
-
-    <div class="value">
-        X : <span id="x">0</span>
+    <div class="flex items-center space-x-2">
+      <span class="text-xs bg-slate-800 border border-slate-700 text-slate-300 font-mono px-2 py-0.5 rounded">
+        Unity Controller
+      </span>
     </div>
+  </header>
 
-    <div class="value">
-        Y : <span id="y">0</span>
-    </div>
+  <main class="flex-1 max-w-md w-full mx-auto p-4 flex flex-col gap-4">
+    
+    <!-- デバイス設定カード -->
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg shadow-black/40">
+      <div class="flex items-center justify-between mb-2">
+        <label for="deviceIdInput" class="text-xs font-bold text-slate-400 uppercase tracking-wider">Device ID</label>
+        <button id="regenerateIdBtn" class="text-xs text-sky-400 hover:text-sky-300 transition-colors flex items-center gap-1">
+          <span>🔄 再生成</span>
+        </button>
+      </div>
+      <div class="relative">
+        <input 
+          type="text" 
+          id="deviceIdInput" 
+          class="w-full bg-slate-950 border border-slate-700 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 text-slate-100 font-mono text-sm px-3 py-2.5 rounded-xl outline-none transition" 
+          placeholder="Device IDを入力"
+        >
+      </div>
+    </section>
 
-    <div class="value">
-        Z : <span id="z">0</span>
-    </div>
+    <section id="shakeFeedbackBox" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col items-center justify-center relative overflow-hidden transition-all duration-200">
+        <div class="absolute -right-12 -top-12 w-32 h-32 bg-sky-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
-    <div id="gauge">
-        <div id="gaugeFill"></div>
-    </div>
+        <!--追加-->
+        <!-- 炭酸ボトル -->
+        <div id="bottle" class="bottle">
+            <div class="cap"></div>
 
-    <div id="power">
-        炭酸：0%
-    </div>
+            <div class="drink">
+                <div class="bubble b1"></div>
+                <div class="bubble b2"></div>
+                <div class="bubble b3"></div>
+                <div class="bubble b4"></div>
+                <div class="bubble b5"></div>
+                <div class="bubble b6"></div>
+                <div class="bubble b7"></div>
+                <div class="bubble b8"></div>
+            </div>
+        </div>
 
-    <div id="shakeCount">
-        シェイク回数：0
-    </div>
+        <!-- センサー有効化ボタン (iOS対策) -->
+        <button id="enableMotionBtn"
+                class="w-full bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 active:scale-[0.98] text-white font-bold py-3.5 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 mb-3">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+            <span>センサー起動 (タップして開始)</span>
+        </button>
 
-    <script>
+        <!-- シェイク回数・検知バッジ -->
+        <div class="flex flex-col items-center my-3">
+            <span class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">Total Shakes Sent</span>
+            <span id="shakeCountBadge" class="text-5xl font-extrabold font-mono text-white tracking-tight">0</span>
+        </div>
 
-        // =========================
-        // センサー用
-        // =========================
+        <!-- シェイク検知ステータス -->
+        <div id="shakeStatusBanner" class="w-full py-2 px-3 rounded-lg bg-slate-950/70 border border-slate-800/80 text-center text-xs font-semibold text-slate-400 transition-colors">
+            スマホを振るとUnityへ送信されます
+        </div>
 
-        let previousX = null;
-        let previousY = null;
-        let previousZ = null;
+        <!-- 手動テストボタン -->
+        <button id="manualTestBtn"
+                class="w-full mt-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-300 font-semibold py-2 px-3 rounded-xl border border-slate-700 text-xs transition flex items-center justify-center gap-1.5">
+            <span>⚡ 手動テスト送信 (Test Shake)</span>
+        </button>
+    </section>
 
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col gap-3">
+      <div class="flex justify-between items-center mb-1">
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">加速度センサー (m/s²)</h2>
+        <span class="text-xs font-mono text-sky-400" id="totalMagnitudeText">0.00</span>
+      </div>
 
-        // =========================
-        // 炭酸
-        // =========================
+      <!-- メーター: X軸 -->
+      <div>
+        <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+          <span>X軸</span>
+          <span id="valX">0.00</span>
+        </div>
+        <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="meterX" class="h-full bg-rose-500 rounded-full meter-bar" style="width: 0%"></div>
+        </div>
+      </div>
 
-        let carbonatedPower = 0;
+      <!-- メーター: Y軸 -->
+      <div>
+        <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+          <span>Y軸</span>
+          <span id="valY">0.00</span>
+        </div>
+        <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="meterY" class="h-full bg-emerald-500 rounded-full meter-bar" style="width: 0%"></div>
+        </div>
+      </div>
 
+      <!-- メーター: Z軸 -->
+      <div>
+        <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+          <span>Z軸</span>
+          <span id="valZ">0.00</span>
+        </div>
+        <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+          <div id="meterZ" class="h-full bg-blue-500 rounded-full meter-bar" style="width: 0%"></div>
+        </div>
+      </div>
 
-        // =========================
-        // シェイク判定
-        // =========================
+      <div class="pt-3 border-t border-slate-800/80 mt-1">
+        <div class="flex justify-between text-xs font-mono text-slate-400 mb-1">
+          <span>しきい値 (感度)</span>
+          <span id="thresholdVal">25</span>
+        </div>
+        <input 
+          id="thresholdSlider" 
+          type="range" 
+          min="10" 
+          max="60" 
+          value="25" 
+          step="1"
+          class="w-full h-1.5 bg-slate-950 rounded-lg appearance-none cursor-pointer accent-sky-500"
+        >
+        <div class="flex justify-between text-[10px] text-slate-500 mt-1">
+          <span>敏感 (10)</span>
+          <span>強め (60)</span>
+        </div>
+      </div>
+    </section>
 
-        let shakeCount = 0;
+    <section class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col flex-1">
+      <div class="flex justify-between items-center mb-2">
+        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">送信ログ</h2>
+        <button id="clearLogBtn" class="text-[11px] text-slate-500 hover:text-slate-300">クリア</button>
+      </div>
+      <div id="logConsole" class="flex-1 max-h-36 overflow-y-auto font-mono text-[11px] text-slate-400 space-y-1 pr-1 bg-slate-950/50 p-2 rounded-xl border border-slate-800/60">
+        <div class="text-slate-600">[システム] 待機中...</div>
+      </div>
+    </section>
 
-        let lastShakeTime = 0;
+  </main>
 
-        const SHAKE_THRESHOLD = 3.0;
+  <script>
+    // 状態管理
+    let socket = null;
+    let shakeCount = 0;
+    let lastShakeTimestamp = 0;
+    let shakeThreshold = 25;
+    const SHAKE_COOLDOWN_MS = 600; // 連続送信防止クールダウン (ミリ秒)
 
-        const SHAKE_COOLDOWN = 500;
+    // DOM要素
+    const statusDot = document.getElementById('statusDot');
+    const pingDot = document.getElementById('pingDot');
+    const statusText = document.getElementById('statusText');
+    const bottle = document.getElementById('bottle');
+    const deviceIdInput = document.getElementById('deviceIdInput');
+    const regenerateIdBtn = document.getElementById('regenerateIdBtn');
+    const enableMotionBtn = document.getElementById('enableMotionBtn');
+    const manualTestBtn = document.getElementById('manualTestBtn');
+    const shakeFeedbackBox = document.getElementById('shakeFeedbackBox');
+    const shakeCountBadge = document.getElementById('shakeCountBadge');
+    const shakeStatusBanner = document.getElementById('shakeStatusBanner');
+    const logConsole = document.getElementById('logConsole');
+    
+    const valX = document.getElementById('valX');
+    const valY = document.getElementById('valY');
+    const valZ = document.getElementById('valZ');
+    const totalMagnitudeText = document.getElementById('totalMagnitudeText');
+    const meterX = document.getElementById('meterX');
+    const meterY = document.getElementById('meterY');
+    const meterZ = document.getElementById('meterZ');
+    const thresholdSlider = document.getElementById('thresholdSlider');
+    const thresholdVal = document.getElementById('thresholdVal');
 
+    function generateDeviceId() {
+      const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+      return `PHONE_${randomStr}`;
+    }
 
-        // =========================
-        // センサー開始
-        // =========================
+    const savedId = localStorage.getItem('unity_controller_device_id');
+    if (savedId) {
+      deviceIdInput.value = savedId;
+    } else {
+      deviceIdInput.value = generateDeviceId();
+      localStorage.setItem('unity_controller_device_id', deviceIdInput.value);
+    }
 
-        async function startSensor() {
-            const status =
-                document.getElementById("status");
+    deviceIdInput.addEventListener('change', () => {
+      localStorage.setItem('unity_controller_device_id', deviceIdInput.value.trim());
+      addLog(`Device IDを更新: ${deviceIdInput.value.trim()}`);
+    });
 
+    regenerateIdBtn.addEventListener('click', () => {
+      const newId = generateDeviceId();
+      deviceIdInput.value = newId;
+      localStorage.setItem('unity_controller_device_id', newId);
+      addLog(`新しいDevice IDを生成: ${newId}`);
+    });
 
-            try {
-                // iPhoneなどで必要
-                if (
-                    typeof DeviceMotionEvent !== "undefined" &&
-                    typeof DeviceMotionEvent.requestPermission === "function"
-                ) {
-                    const permission =
-                        await DeviceMotionEvent.requestPermission();
+    function addLog(message) {
+      const time = new Date().toLocaleTimeString('ja-JP', { hour12: false });
+      const row = document.createElement('div');
+      row.innerHTML = `<span class="text-slate-600">[${time}]</span> ${message}`;
+      logConsole.appendChild(row);
+      logConsole.scrollTop = logConsole.scrollHeight;
+    }
 
+    function connectWebSocket() {
+      // 現在のホストから動的に WebSocket の URL を生成 (wss:// or ws://)
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
 
-                    if (permission !== "granted") {
-                        status.textContent =
-                            "センサー許可が拒否されました";
+      statusDot.className = "h-3 w-3 rounded-full bg-amber-500 relative";
+      pingDot.className = "h-3 w-3 rounded-full bg-amber-500 animate-ping absolute opacity-75";
+      statusText.textContent = "接続試行中...";
+      statusText.className = "text-xs font-semibold uppercase tracking-wider text-amber-400";
 
-                        return;
-                    }
-                }
+      try {
+        socket = new WebSocket(wsUrl);
 
+        socket.onopen = () => {
+          statusDot.className = "h-3 w-3 rounded-full bg-emerald-500 relative";
+          pingDot.className = "h-3 w-3 rounded-full bg-emerald-500 animate-ping absolute opacity-75";
+          statusText.textContent = "接続済み";
+          statusText.className = "text-xs font-semibold uppercase tracking-wider text-emerald-400";
+          addLog("WebSocketサーバーに接続しました");
+        };
 
-                // センサーイベント登録
-                window.addEventListener(
-                    "devicemotion",
-                    onMotion
-                );
+        socket.onclose = () => {
+          statusDot.className = "h-3 w-3 rounded-full bg-rose-500 relative";
+          pingDot.className = "hidden";
+          statusText.textContent = "切断中 (再接続待ち)";
+          statusText.className = "text-xs font-semibold uppercase tracking-wider text-rose-400";
+          addLog("サーバーから切断されました。3秒後に再試行します...");
+          setTimeout(connectWebSocket, 3000);
+        };
 
+        socket.onerror = (err) => {
+          console.error("WebSocketエラー:", err);
+          socket.close();
+        };
 
-                status.textContent =
-                    "センサー開始";
+      } catch (err) {
+        console.error("接続例外:", err);
+        setTimeout(connectWebSocket, 3000);
+      }
+    }
 
+    //追加
+    // ボトルを揺らす
+      function shakeBottle() {
 
-                console.log("センサー開始");
+          bottle.animate(
+              [
+                  { transform: 'rotate(0deg)' },
+                  { transform: 'rotate(-12deg)' },
+                  { transform: 'rotate(10deg)' },
+                  { transform: 'rotate(-8deg)' },
+                  { transform: 'rotate(6deg)' },
+                  { transform: 'rotate(0deg)' }
+              ],
+              {
+                  duration: 250,
+                  easing: 'ease-out'
+              }
+          );
+      }
 
+    function sendShake() {
+      const now = Date.now();
+      if (now - lastShakeTimestamp < SHAKE_COOLDOWN_MS) {
+        return; // クールダウン中
+      }
+      lastShakeTimestamp = now;
 
-            }
-            catch (error) {
-                status.textContent =
-                    "エラー : " + error;
+      const deviceId = deviceIdInput.value.trim() || 'UNKNOWN_PHONE';
+      const payload = {
+        type: 'shake',
+        deviceId: deviceId
+      };
 
-                console.error(error);
-            }
+      if (socket && socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify(payload));
+        addLog(`<span class="text-emerald-400">📤 シェイク送信:</span> ${deviceId}`);
+      } else {
+        addLog(`<span class="text-amber-400">⚠️ 未接続: 送信をスキップしました</span>`);
+      }
+
+      // UIフィードバック (パルスアニメーション & バッジ更新)
+      shakeCount++;
+      shakeCountBadge.textContent = shakeCount;
+      shakeBottle();
+
+      shakeFeedbackBox.classList.add('border-rose-500', 'bg-rose-950/20');
+      shakeStatusBanner.textContent = "🔥 シェイクを検知して送信しました！";
+      shakeStatusBanner.classList.add('text-rose-400', 'border-rose-500/50');
+
+      // 端末のバイブレーション (対応端末のみ)
+      if ('vibrate' in navigator) {
+        navigator.vibrate(100);
+      }
+
+      setTimeout(() => {
+        shakeFeedbackBox.classList.remove('border-rose-500', 'bg-rose-950/20');
+        shakeStatusBanner.textContent = "スマホを振るとUnityへ送信されます";
+        shakeStatusBanner.classList.remove('text-rose-400', 'border-rose-500/50');
+      }, 500);
+    }
+
+    // 手動テストボタン
+    manualTestBtn.addEventListener('click', () => {
+      sendShake();
+    });
+
+    // ログクリア
+    document.getElementById('clearLogBtn').addEventListener('click', () => {
+      logConsole.innerHTML = '';
+    });
+
+    // 感度スライダー設定
+    thresholdSlider.addEventListener('input', (e) => {
+      shakeThreshold = parseFloat(e.target.value);
+      thresholdVal.textContent = shakeThreshold;
+    });
+
+    let lastX = 0, lastY = 0, lastZ = 0;
+
+    function handleMotionEvent(event) {
+      // 重力加速度を除外した acceleration を優先、無ければ accelerationIncludingGravity
+      const acc = event.acceleration && event.acceleration.x !== null 
+        ? event.acceleration 
+        : event.accelerationIncludingGravity;
+
+      if (!acc) return;
+
+      const x = acc.x || 0;
+      const y = acc.y || 0;
+      const z = acc.z || 0;
+
+      // 画面上の数値更新
+      valX.textContent = x.toFixed(2);
+      valY.textContent = y.toFixed(2);
+      valZ.textContent = z.toFixed(2);
+
+      // メーターのパーセンテージ反映 (最大40m/s²を基準にスケール)
+      meterX.style.width = `${Math.min(Math.abs(x) / 40 * 100, 100)}%`;
+      meterY.style.width = `${Math.min(Math.abs(y) / 40 * 100, 100)}%`;
+      meterZ.style.width = `${Math.min(Math.abs(z) / 40 * 100, 100)}%`;
+
+      // 加速度の変化量 (ジャーク / デルタ) の計算
+      const deltaX = Math.abs(x - lastX);
+      const deltaY = Math.abs(y - lastY);
+      const deltaZ = Math.abs(z - lastZ);
+      const magnitude = deltaX + deltaY + deltaZ;
+
+      totalMagnitudeText.textContent = magnitude.toFixed(2);
+
+      if (magnitude > shakeThreshold) {
+        sendShake();
+      }
+
+      lastX = x;
+      lastY = y;
+      lastZ = z;
+    }
+
+    async function requestMotionPermission() {
+      // iOS 13+ 向け permission request
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+          const response = await DeviceMotionEvent.requestPermission();
+          if (response === 'granted') {
+            window.addEventListener('devicemotion', handleMotionEvent);
+            enableMotionBtn.classList.add('hidden');
+            addLog("iOSモーションセンサーが許可されました");
+          } else {
+            addLog("<span class='text-rose-400'>センサーへのアクセスが拒否されました</span>");
+          }
+        } catch (error) {
+          console.error(error);
+          addLog("パーミッション要求エラー: " + error);
         }
+      } else {
+        // Android / PC / 非iOS
+        window.addEventListener('devicemotion', handleMotionEvent);
+        enableMotionBtn.classList.add('hidden');
+        addLog("モーションセンサーリスナーを開始しました");
+      }
+    }
 
+    enableMotionBtn.addEventListener('click', () => {
+      requestMotionPermission();
+    });
 
-        // =========================
-        // 加速度取得
-        // =========================
-
-        function onMotion(event) {
-            const acceleration =
-                event.accelerationIncludingGravity;
-
-
-            if (!acceleration) {
-                return;
-            }
-
-
-            // =========================
-            // 現在の加速度
-            // =========================
-
-            const x = acceleration.x ?? 0;
-            const y = acceleration.y ?? 0;
-            const z = acceleration.z ?? 0;
-
-
-            // =========================
-            // X/Y/Z表示
-            // =========================
-
-            document.getElementById("x")
-                .textContent =
-                x.toFixed(2);
-
-
-            document.getElementById("y")
-                .textContent =
-                y.toFixed(2);
-
-
-            document.getElementById("z")
-                .textContent =
-                z.toFixed(2);
-
-
-            // =========================
-            // 初回だけ基準値を保存
-            // =========================
-
-            if (
-                previousX === null ||
-                previousY === null ||
-                previousZ === null
-            ) {
-                previousX = x;
-                previousY = y;
-                previousZ = z;
-
-                return;
-            }
-
-
-            // =========================
-            // 前回との差
-            // =========================
-
-            const dx = x - previousX;
-            const dy = y - previousY;
-            const dz = z - previousZ;
-
-
-            // =========================
-            // シェイクの強さ
-            // =========================
-
-            const shakePower =
-                Math.sqrt(
-                    dx * dx +
-                    dy * dy +
-                    dz * dz
-                );
-
-
-            // =========================
-            // 炭酸を増やす
-            // =========================
-
-            if (shakePower >= SHAKE_THRESHOLD) {
-                carbonatedPower +=
-                    shakePower * 0.5;
-
-
-                // 100%を超えない
-                carbonatedPower =
-                    Math.min(
-                        carbonatedPower,
-                        100
-                    );
-
-
-                // ゲージ
-                document.getElementById("gaugeFill")
-                    .style.width =
-                    carbonatedPower + "%";
-
-
-                // 数字
-                document.getElementById("power")
-                    .textContent =
-                    "炭酸：" +
-                    carbonatedPower.toFixed(1) +
-                    "%";
-            }
-
-
-            // =========================
-            // シェイク回数
-            // =========================
-
-            const now = Date.now();
-
-
-            if (
-                shakePower >= SHAKE_THRESHOLD &&
-                now - lastShakeTime >= SHAKE_COOLDOWN
-            ) {
-                shakeCount++;
-
-                lastShakeTime = now;
-
-
-                document.getElementById("shakeCount")
-                    .textContent =
-                    "シェイク回数：" +
-                    shakeCount;
-
-
-                console.log(
-                    "SHAKE!",
-                    shakeCount,
-                    shakePower
-                );
-            }
-
-
-            // =========================
-            // 現在値を保存
-            // =========================
-
-            previousX = x;
-            previousY = y;
-            previousZ = z;
-        }
-
-    </script>
-
+    // 初期化実行
+    window.addEventListener('load', () => {
+      connectWebSocket();
+      
+      // iOS以外で既に権限が不要なブラウザの場合、直接リスナーを登録
+      if (typeof DeviceMotionEvent === 'undefined' || typeof DeviceMotionEvent.requestPermission !== 'function') {
+        window.addEventListener('devicemotion', handleMotionEvent);
+      }
+    });
+  </script>
 </body>
-
 </html>
