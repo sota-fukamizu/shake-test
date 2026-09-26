@@ -44,6 +44,25 @@
             font-size: 22px;
         }
 
+        #gauge {
+            width: 80%;
+            height: 40px;
+            margin: 40px auto 20px;
+
+            background: #333;
+        }
+
+        #gaugeFill {
+            width: 0%;
+            height: 100%;
+            background: #00aaff;
+
+            transition: width 0.1s;
+        }
+
+        #power {
+            font-size: 30px;
+        }
     </style>
 
 </head>
@@ -75,13 +94,24 @@
         Z : <span id="z">0</span>
     </div>
 
+    <div id="gauge">
+    <div id="gaugeFill"></div>
+    </div>
+
+    <div id="power">
+        炭酸：0%
+    </div>
 
     <script>
 
         // =========================
         // センサー開始
         // =========================
+    let previousX = 0;
+    let previousY = 0;
+    let previousZ = 0;
 
+    let carbonatedPower = 0;
         async function startSensor()
         {
             const status =
@@ -151,37 +181,89 @@
             const acceleration =
                 event.accelerationIncludingGravity;
 
-
             if (!acceleration)
             {
                 return;
             }
 
 
-            const x =
-                acceleration.x ?? 0;
-
-            const y =
-                acceleration.y ?? 0;
-
-            const z =
-                acceleration.z ?? 0;
+            // 現在の加速度
+            const x = acceleration.x ?? 0;
+            const y = acceleration.y ?? 0;
+            const z = acceleration.z ?? 0;
 
 
+            // X/Y/Zを表示
             document.getElementById("x")
                 .textContent =
                 x.toFixed(2);
-
 
             document.getElementById("y")
                 .textContent =
                 y.toFixed(2);
 
-
             document.getElementById("z")
                 .textContent =
                 z.toFixed(2);
 
+
+            // =========================
+            // 前回との差を計算
+            // =========================
+
+            const dx = x - previousX;
+            const dy = y - previousY;
+            const dz = z - previousZ;
+
+
+            // シェイクの強さ
+            const shakePower =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy +
+                    dz * dz
+                );
+
+
+            // =========================
+            // シェイクを炭酸に変換
+            // =========================
+
+            if (shakePower > 1.5)
+            {
+                carbonatedPower +=
+                    shakePower * 0.5;
+            }
+
+
+            // 0～100に制限
+            carbonatedPower =
+                Math.min(carbonatedPower, 100);
+
+
+            // =========================
+            // 炭酸ゲージ表示
+            // =========================
+
+            document.getElementById("power")
+                .textContent =
+                "炭酸：" +
+                carbonatedPower.toFixed(1) +
+                "%";
+
+
+            document.getElementById("gaugeFill")
+                .style.width =
+                carbonatedPower + "%";
+
+
+            // =========================
+            // 現在値を保存
+            // =========================
+
+            previousX = x;
+            previousY = y;
+            previousZ = z;
         }
 
     </script>
