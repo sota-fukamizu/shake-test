@@ -1,1 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
 
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>炭酸シェイク</title>
+
+    <style>
+
+        body {
+            margin: 0;
+            background: #111;
+            color: white;
+            font-family: sans-serif;
+            text-align: center;
+        }
+
+        h1 {
+            margin-top: 60px;
+            font-size: 40px;
+        }
+
+        button {
+            width: 80%;
+            height: 150px;
+
+            margin-top: 40px;
+
+            font-size: 35px;
+        }
+
+        .value {
+            font-size: 35px;
+            margin-top: 30px;
+        }
+
+        #status {
+            margin-top: 30px;
+            font-size: 22px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <h1>🥤 炭酸シェイク</h1>
+
+    <button onclick="startSensor()">
+        センサー開始
+    </button>
+
+
+    <div id="status">
+        センサー未開始
+    </div>
+
+
+    <div class="value">
+        X : <span id="x">0</span>
+    </div>
+
+    <div class="value">
+        Y : <span id="y">0</span>
+    </div>
+
+    <div class="value">
+        Z : <span id="z">0</span>
+    </div>
+
+
+    <script>
+
+        // =========================
+        // センサー開始
+        // =========================
+
+        async function startSensor()
+        {
+            const status =
+                document.getElementById("status");
+
+
+            try
+            {
+
+                // iPhoneなどで必要になる
+                // Androidでは通常ここは通らない
+
+                if (
+                    typeof DeviceMotionEvent !== "undefined" &&
+                    typeof DeviceMotionEvent.requestPermission === "function"
+                )
+                {
+
+                    const permission =
+                        await DeviceMotionEvent.requestPermission();
+
+
+                    if (permission !== "granted")
+                    {
+                        status.textContent =
+                            "センサー許可が拒否されました";
+
+                        return;
+                    }
+
+                }
+
+
+                // センサーイベント登録
+
+                window.addEventListener(
+                    "devicemotion",
+                    onMotion
+                );
+
+
+                status.textContent =
+                    "センサー開始";
+
+
+            }
+            catch (error)
+            {
+
+                status.textContent =
+                    "エラー : " + error;
+
+                console.error(error);
+
+            }
+
+        }
+
+
+        // =========================
+        // 加速度取得
+        // =========================
+
+        function onMotion(event)
+        {
+
+            const acceleration =
+                event.accelerationIncludingGravity;
+
+
+            if (!acceleration)
+            {
+                return;
+            }
+
+
+            const x =
+                acceleration.x ?? 0;
+
+            const y =
+                acceleration.y ?? 0;
+
+            const z =
+                acceleration.z ?? 0;
+
+
+            document.getElementById("x")
+                .textContent =
+                x.toFixed(2);
+
+
+            document.getElementById("y")
+                .textContent =
+                y.toFixed(2);
+
+
+            document.getElementById("z")
+                .textContent =
+                z.toFixed(2);
+
+        }
+
+    </script>
+
+</body>
+
+</html>
