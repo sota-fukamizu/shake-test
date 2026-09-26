@@ -201,156 +201,152 @@
         // 加速度取得
         // =========================
 
-        function onMotion(event)
-        {
+        function onMotion(event) {
+            const acceleration =
+                event.accelerationIncludingGravity;
 
-            function onMotion(event) {
-                const acceleration =
-                    event.accelerationIncludingGravity;
+            if (!acceleration) {
+                return;
+            }
 
-                if (!acceleration) {
-                    return;
+
+            // =========================
+            // 現在の加速度
+            // =========================
+
+            const x = acceleration.x ?? 0;
+            const y = acceleration.y ?? 0;
+            const z = acceleration.z ?? 0;
+
+
+            // X/Y/Z表示
+            document.getElementById("x")
+                .textContent =
+                x.toFixed(2);
+
+            document.getElementById("y")
+                .textContent =
+                y.toFixed(2);
+
+            document.getElementById("z")
+                .textContent =
+                z.toFixed(2);
+
+
+            // =========================
+            // 前回との差
+            // =========================
+
+            const dx = x - previousX;
+            const dy = y - previousY;
+            const dz = z - previousZ;
+
+
+            // 加速度の変化量
+            const movement =
+                Math.sqrt(
+                    dx * dx +
+                    dy * dy +
+                    dz * dz
+                );
+
+
+            // =========================
+            // 一番大きく動いた方向を調べる
+            // =========================
+
+            let direction = 0;
+
+            if (Math.abs(dx) >= Math.abs(dy) &&
+                Math.abs(dx) >= Math.abs(dz)) {
+                // X方向
+
+                if (dx > DIRECTION_THRESHOLD) {
+                    direction = 1;
+                }
+                else if (dx < -DIRECTION_THRESHOLD) {
+                    direction = -1;
+                }
+            }
+            else if (Math.abs(dy) >= Math.abs(dz)) {
+                // Y方向
+
+                if (dy > DIRECTION_THRESHOLD) {
+                    direction = 1;
+                }
+                else if (dy < -DIRECTION_THRESHOLD) {
+                    direction = -1;
+                }
+            }
+            else {
+                // Z方向
+
+                if (dz > DIRECTION_THRESHOLD) {
+                    direction = 1;
+                }
+                else if (dz < -DIRECTION_THRESHOLD) {
+                    direction = -1;
+                }
+            }
+
+
+            // =========================
+            // シェイク判定
+            // =========================
+
+            const now = Date.now();
+
+
+            if (
+                movement >= SHAKE_THRESHOLD &&
+                direction !== 0
+            ) {
+                // まだシェイクしていない
+                if (!isShaking) {
+                    isShaking = true;
+
+                    lastDirection = direction;
                 }
 
+                // 反対方向へ振った
+                else if (
+                    direction !== lastDirection &&
+                    now - lastShakeTime >= SHAKE_COOLDOWN
+                ) {
+                    // =====================
+                    // シェイク1回成立
+                    // =====================
 
-                // =========================
-                // 現在の加速度
-                // =========================
+                    shakeCount++;
 
-                const x = acceleration.x ?? 0;
-                const y = acceleration.y ?? 0;
-                const z = acceleration.z ?? 0;
+                    lastShakeTime = now;
 
-
-                // X/Y/Z表示
-                document.getElementById("x")
-                    .textContent =
-                    x.toFixed(2);
-
-                document.getElementById("y")
-                    .textContent =
-                    y.toFixed(2);
-
-                document.getElementById("z")
-                    .textContent =
-                    z.toFixed(2);
+                    lastDirection = direction;
 
 
-                // =========================
-                // 前回との差
-                // =========================
-
-                const dx = x - previousX;
-                const dy = y - previousY;
-                const dz = z - previousZ;
-
-
-                // 加速度の変化量
-                const movement =
-                    Math.sqrt(
-                        dx * dx +
-                        dy * dy +
-                        dz * dz
+                    console.log(
+                        "SHAKE!",
+                        shakeCount
                     );
 
 
-                // =========================
-                // 一番大きく動いた方向を調べる
-                // =========================
-
-                let direction = 0;
-
-                if (Math.abs(dx) >= Math.abs(dy) &&
-                    Math.abs(dx) >= Math.abs(dz)) {
-                    // X方向
-
-                    if (dx > DIRECTION_THRESHOLD) {
-                        direction = 1;
-                    }
-                    else if (dx < -DIRECTION_THRESHOLD) {
-                        direction = -1;
-                    }
+                    document.getElementById("power")
+                        .textContent =
+                        "SHAKE! × " + shakeCount;
                 }
-                else if (Math.abs(dy) >= Math.abs(dz)) {
-                    // Y方向
-
-                    if (dy > DIRECTION_THRESHOLD) {
-                        direction = 1;
-                    }
-                    else if (dy < -DIRECTION_THRESHOLD) {
-                        direction = -1;
-                    }
-                }
-                else {
-                    // Z方向
-
-                    if (dz > DIRECTION_THRESHOLD) {
-                        direction = 1;
-                    }
-                    else if (dz < -DIRECTION_THRESHOLD) {
-                        direction = -1;
-                    }
-                }
-
-
-                // =========================
-                // シェイク判定
-                // =========================
-
-                const now = Date.now();
-
-
-                if (
-                    movement >= SHAKE_THRESHOLD &&
-                    direction !== 0
-                ) {
-                    // まだシェイクしていない
-                    if (!isShaking) {
-                        isShaking = true;
-
-                        lastDirection = direction;
-                    }
-
-                    // 反対方向へ振った
-                    else if (
-                        direction !== lastDirection &&
-                        now - lastShakeTime >= SHAKE_COOLDOWN
-                    ) {
-                        // =====================
-                        // シェイク1回成立
-                        // =====================
-
-                        shakeCount++;
-
-                        lastShakeTime = now;
-
-                        lastDirection = direction;
-
-
-                        console.log(
-                            "SHAKE!",
-                            shakeCount
-                        );
-
-
-                        document.getElementById("power")
-                            .textContent =
-                            "SHAKE! × " + shakeCount;
-                    }
-                }
-
-
-                // 動きが小さくなったらシェイク終了
-                if (movement < 1.0) {
-                    isShaking = false;
-                }
-
-
-                // 前回値を保存
-                previousX = x;
-                previousY = y;
-                previousZ = z;
             }
+
+
+            // 動きが小さくなったらシェイク終了
+            if (movement < 1.0) {
+                isShaking = false;
+            }
+
+
+            // 前回値を保存
+            previousX = x;
+            previousY = y;
+            previousZ = z;
         }
 
     </script>
