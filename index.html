@@ -109,23 +109,37 @@
     <script>
 
         // =========================
-        // センサー開始
+        // センサー用
         // =========================
-        let previousX = 0;
-        let previousY = 0;
-        let previousZ = 0;
+
+        let previousX = null;
+        let previousY = null;
+        let previousZ = null;
+
+
+        // =========================
+        // 炭酸
+        // =========================
 
         let carbonatedPower = 0;
 
+
         // =========================
-        // シェイク判定用
+        // シェイク判定
         // =========================
 
         let shakeCount = 0;
+
         let lastShakeTime = 0;
 
         const SHAKE_THRESHOLD = 3.0;
-        const SHAKE_COOLDOWN = 300;
+
+        const SHAKE_COOLDOWN = 500;
+
+
+        // =========================
+        // センサー開始
+        // =========================
 
         async function startSensor() {
             const status =
@@ -133,15 +147,11 @@
 
 
             try {
-
-                // iPhoneなどで必要になる
-                // Androidでは通常ここは通らない
-
+                // iPhoneなどで必要
                 if (
                     typeof DeviceMotionEvent !== "undefined" &&
                     typeof DeviceMotionEvent.requestPermission === "function"
                 ) {
-
                     const permission =
                         await DeviceMotionEvent.requestPermission();
 
@@ -152,12 +162,10 @@
 
                         return;
                     }
-
                 }
 
 
                 // センサーイベント登録
-
                 window.addEventListener(
                     "devicemotion",
                     onMotion
@@ -168,16 +176,16 @@
                     "センサー開始";
 
 
+                console.log("センサー開始");
+
+
             }
             catch (error) {
-
                 status.textContent =
                     "エラー : " + error;
 
                 console.error(error);
-
             }
-
         }
 
 
@@ -188,6 +196,7 @@
         function onMotion(event) {
             const acceleration =
                 event.accelerationIncludingGravity;
+
 
             if (!acceleration) {
                 return;
@@ -211,13 +220,32 @@
                 .textContent =
                 x.toFixed(2);
 
+
             document.getElementById("y")
                 .textContent =
                 y.toFixed(2);
 
+
             document.getElementById("z")
                 .textContent =
                 z.toFixed(2);
+
+
+            // =========================
+            // 初回だけ基準値を保存
+            // =========================
+
+            if (
+                previousX === null ||
+                previousY === null ||
+                previousZ === null
+            ) {
+                previousX = x;
+                previousY = y;
+                previousZ = z;
+
+                return;
+            }
 
 
             // =========================
@@ -230,7 +258,7 @@
 
 
             // =========================
-            // 加速度の変化量
+            // シェイクの強さ
             // =========================
 
             const shakePower =
@@ -242,7 +270,39 @@
 
 
             // =========================
-            // シェイク判定
+            // 炭酸を増やす
+            // =========================
+
+            if (shakePower >= SHAKE_THRESHOLD) {
+                carbonatedPower +=
+                    shakePower * 0.5;
+
+
+                // 100%を超えない
+                carbonatedPower =
+                    Math.min(
+                        carbonatedPower,
+                        100
+                    );
+
+
+                // ゲージ
+                document.getElementById("gaugeFill")
+                    .style.width =
+                    carbonatedPower + "%";
+
+
+                // 数字
+                document.getElementById("power")
+                    .textContent =
+                    "炭酸：" +
+                    carbonatedPower.toFixed(1) +
+                    "%";
+            }
+
+
+            // =========================
+            // シェイク回数
             // =========================
 
             const now = Date.now();
@@ -259,7 +319,8 @@
 
                 document.getElementById("shakeCount")
                     .textContent =
-                    "シェイク回数：" + shakeCount;
+                    "シェイク回数：" +
+                    shakeCount;
 
 
                 console.log(
@@ -271,7 +332,7 @@
 
 
             // =========================
-            // 前回値を保存
+            // 現在値を保存
             // =========================
 
             previousX = x;
