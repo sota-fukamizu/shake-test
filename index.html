@@ -95,11 +95,15 @@
     </div>
 
     <div id="gauge">
-    <div id="gaugeFill"></div>
+        <div id="gaugeFill"></div>
     </div>
 
     <div id="power">
         炭酸：0%
+    </div>
+
+    <div id="shakeCount">
+        シェイク回数：0
     </div>
 
     <script>
@@ -107,45 +111,28 @@
         // =========================
         // センサー開始
         // =========================
-    let previousX = 0;
-    let previousY = 0;
-    let previousZ = 0;
+        let previousX = 0;
+        let previousY = 0;
+        let previousZ = 0;
 
-    let carbonatedPower = 0;
+        let carbonatedPower = 0;
 
         // =========================
         // シェイク判定用
         // =========================
 
-        // シェイク1回として認識する強さ
-        const SHAKE_THRESHOLD = 3.0;
-
-        // 反対方向への変化を検出するための閾値
-        const DIRECTION_THRESHOLD = 2.0;
-
-        // 1回のシェイクとして認識した後の待ち時間
-        const SHAKE_COOLDOWN = 300;
-
-        // 最後に強く動いた方向
-        let lastDirection = 0;
-
-        // 現在シェイク中か
-        let isShaking = false;
-
-        // 最後にシェイクを認識した時間
+        let shakeCount = 0;
         let lastShakeTime = 0;
 
-        // シェイク回数
-        let shakeCount = 0;
+        const SHAKE_THRESHOLD = 3.0;
+        const SHAKE_COOLDOWN = 300;
 
-        async function startSensor()
-        {
+        async function startSensor() {
             const status =
                 document.getElementById("status");
 
 
-            try
-            {
+            try {
 
                 // iPhoneなどで必要になる
                 // Androidでは通常ここは通らない
@@ -153,15 +140,13 @@
                 if (
                     typeof DeviceMotionEvent !== "undefined" &&
                     typeof DeviceMotionEvent.requestPermission === "function"
-                )
-                {
+                ) {
 
                     const permission =
                         await DeviceMotionEvent.requestPermission();
 
 
-                    if (permission !== "granted")
-                    {
+                    if (permission !== "granted") {
                         status.textContent =
                             "センサー許可が拒否されました";
 
@@ -184,8 +169,7 @@
 
 
             }
-            catch (error)
-            {
+            catch (error) {
 
                 status.textContent =
                     "エラー : " + error;
@@ -219,7 +203,10 @@
             const z = acceleration.z ?? 0;
 
 
+            // =========================
             // X/Y/Z表示
+            // =========================
+
             document.getElementById("x")
                 .textContent =
                 x.toFixed(2);
@@ -242,52 +229,16 @@
             const dz = z - previousZ;
 
 
+            // =========================
             // 加速度の変化量
-            const movement =
+            // =========================
+
+            const shakePower =
                 Math.sqrt(
                     dx * dx +
                     dy * dy +
                     dz * dz
                 );
-
-
-            // =========================
-            // 一番大きく動いた方向を調べる
-            // =========================
-
-            let direction = 0;
-
-            if (Math.abs(dx) >= Math.abs(dy) &&
-                Math.abs(dx) >= Math.abs(dz)) {
-                // X方向
-
-                if (dx > DIRECTION_THRESHOLD) {
-                    direction = 1;
-                }
-                else if (dx < -DIRECTION_THRESHOLD) {
-                    direction = -1;
-                }
-            }
-            else if (Math.abs(dy) >= Math.abs(dz)) {
-                // Y方向
-
-                if (dy > DIRECTION_THRESHOLD) {
-                    direction = 1;
-                }
-                else if (dy < -DIRECTION_THRESHOLD) {
-                    direction = -1;
-                }
-            }
-            else {
-                // Z方向
-
-                if (dz > DIRECTION_THRESHOLD) {
-                    direction = 1;
-                }
-                else if (dz < -DIRECTION_THRESHOLD) {
-                    direction = -1;
-                }
-            }
 
 
             // =========================
@@ -298,52 +249,31 @@
 
 
             if (
-                movement >= SHAKE_THRESHOLD &&
-                direction !== 0
+                shakePower >= SHAKE_THRESHOLD &&
+                now - lastShakeTime >= SHAKE_COOLDOWN
             ) {
-                // まだシェイクしていない
-                if (!isShaking) {
-                    isShaking = true;
+                shakeCount++;
 
-                    lastDirection = direction;
-                }
-
-                // 反対方向へ振った
-                else if (
-                    direction !== lastDirection &&
-                    now - lastShakeTime >= SHAKE_COOLDOWN
-                ) {
-                    // =====================
-                    // シェイク1回成立
-                    // =====================
-
-                    shakeCount++;
-
-                    lastShakeTime = now;
-
-                    lastDirection = direction;
+                lastShakeTime = now;
 
 
-                    console.log(
-                        "SHAKE!",
-                        shakeCount
-                    );
+                document.getElementById("shakeCount")
+                    .textContent =
+                    "シェイク回数：" + shakeCount;
 
 
-                    document.getElementById("power")
-                        .textContent =
-                        "SHAKE! × " + shakeCount;
-                }
+                console.log(
+                    "SHAKE!",
+                    shakeCount,
+                    shakePower
+                );
             }
 
 
-            // 動きが小さくなったらシェイク終了
-            if (movement < 1.0) {
-                isShaking = false;
-            }
-
-
+            // =========================
             // 前回値を保存
+            // =========================
+
             previousX = x;
             previousY = y;
             previousZ = z;
